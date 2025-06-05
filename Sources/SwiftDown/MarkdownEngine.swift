@@ -11,6 +11,7 @@ import Foundation
 public class MarkdownEngine {
   var text = ""
   var lines: [Int] = []
+  private let wikilinkProcessor = WikilinkProcessor()
 
   public init() {}
 
@@ -46,8 +47,12 @@ public class MarkdownEngine {
   }
 
   public func render(_ markdownString: String, offset: Int) -> [MarkdownNode] {
-    text = markdownString
-    let lcs = markdownString.components(separatedBy: .newlines).map { $0.utf8.count }
+    // Step 1: Preprocess wikilinks before Down parsing (TI-1 specification)
+    let (processedText, wikilinkInfo) = wikilinkProcessor.preprocessWikilinks(markdownString)
+    
+    // Set text to processed version for internal calculations but keep original for post-processing
+    text = processedText
+    let lcs = processedText.components(separatedBy: .newlines).map { $0.utf8.count }
     var sum = 0
     var counts: [Int] = []
     for l in lcs {
@@ -56,8 +61,34 @@ public class MarkdownEngine {
     }
     lines = counts
 
-    let result = (try? Down(markdownString: markdownString).toDocument(.smart))!
-
-    return exploreChildren(result, offset: offset)
+    // Step 2: Standard Down parsing on preprocessed text
+    let result = (try? Down(markdownString: processedText).toDocument(.smart))!
+    let nodes = exploreChildren(result, offset: offset)
+    
+    // Step 3: Post-process to restore wikilink nodes (TI-1 specification)
+    return wikilinkProcessor.postprocessNodes(nodes, wikilinkInfo: wikilinkInfo, offset: offset)
+  }
+  
+  /// Extracts wikilinks from markdown text without full AST processing
+  ///
+  /// This method provides access to wikilink information for external APIs
+  /// like validation and navigation, as specified in FR-6.
+  ///
+  /// - Parameter markdownString: The markdown text to analyze
+  /// - Returns: Array of WikilinkMatch objects with title and range information
+  public func getWikilinks(from markdownString: String) -> [WikilinkMatch] {
+    return wikilinkProcessor.extractWikilinks(from: markdownString)
+  }
+  
+  /// Validates wikilinks in markdown text using a provided validator
+  ///
+  /// This method provides validation functionality as specified in FR-6.
+  ///
+  /// - Parameters:
+  ///   - markdownString: The markdown text to validate
+  ///   - validator: A closure that returns true if the wikilink title is valid
+  /// - Returns: Dictionary mapping wikilink titles to their validation status
+  public func validateWikilinks(in markdownString: String, using validator: (String) -> Bool) -> [String: Bool] {
+    return wikilinkProcessor.validateWikilinks(in: markdownString, using: validator)
   }
 }

@@ -11,6 +11,34 @@
   import AppKit
 #endif
 
+public struct WikilinkStyle {
+    var textColor: UniversalColor
+    var backgroundColor: UniversalColor
+    var underlineStyle: NSUnderlineStyle
+    var hoverUnderlineStyle: NSUnderlineStyle
+    
+    public static let defaultLight = WikilinkStyle(
+        textColor: UniversalColor(hexString: "#007AFF"),
+        backgroundColor: UniversalColor.clear,
+        underlineStyle: [],
+        hoverUnderlineStyle: .patternDot
+    )
+    
+    public static let defaultDark = WikilinkStyle(
+        textColor: UniversalColor(hexString: "#0A84FF"),
+        backgroundColor: UniversalColor.clear,
+        underlineStyle: [],
+        hoverUnderlineStyle: .patternDot
+    )
+    
+    init(textColor: UniversalColor, backgroundColor: UniversalColor, underlineStyle: NSUnderlineStyle, hoverUnderlineStyle: NSUnderlineStyle) {
+        self.textColor = textColor
+        self.backgroundColor = backgroundColor
+        self.underlineStyle = underlineStyle
+        self.hoverUnderlineStyle = hoverUnderlineStyle
+    }
+}
+
 public struct Theme {
   // MARK: - BuildIn
   public enum BuiltIn: String {
@@ -26,6 +54,7 @@ public struct Theme {
   var tintColor: UniversalColor = UniversalColor.blue
   var cursorColor: UniversalColor = UniversalColor.blue
   var styles: [MarkdownNode.MarkdownType: Style] = [:]
+  public var wikilinkStyle: WikilinkStyle = WikilinkStyle.defaultLight
 
   public init(_ name: String) {
     self.init()

@@ -13,7 +13,7 @@ final class ThemeTests: XCTestCase {
   
   func testParsingThemeStyles() {
     let theme = Theme.BuiltIn.defaultDark.theme()
-    expect(theme.styles).to(haveCount(15))
+    expect(theme.styles).to(haveCount(16))
   }
 
   #if arch(x86_64)

@@ -30,6 +30,9 @@ public struct SwiftDownEditor: UIViewRepresentable {
 
     public var onTextChange: (String) -> Void = { _ in }
     public var onSelectionChange: (NSRange) -> Void = { _ in }
+    public var onWikilinkTapped: ((String) -> Void)? = nil
+    public var onWikilinkHovered: ((String?) -> Void)? = nil
+    public var wikilinkValidator: ((String) -> Bool)? = nil
     let engine = MarkdownEngine()
 
     public init(
@@ -60,6 +63,11 @@ public struct SwiftDownEditor: UIViewRepresentable {
       swiftDown.tintColor = theme.tintColor
       swiftDown.textColor = theme.tintColor
       swiftDown.text = text
+      
+      // Configure wikilink callbacks
+      swiftDown.onWikilinkTapped = onWikilinkTapped
+      swiftDown.onWikilinkHovered = onWikilinkHovered
+      swiftDown.wikilinkValidator = wikilinkValidator
 
       return swiftDown
     }
@@ -156,6 +164,10 @@ public struct SwiftDownEditor: UIViewRepresentable {
 
     public var onTextChange: (String) -> Void = { _ in }
     public var onSelectionChange: (NSRange) -> Void = { _ in }
+    public var onWikilinkTapped: ((String) -> Void)? = nil
+    public var onWikilinkHovered: ((String?) -> Void)? = nil
+    public var wikilinkValidator: ((String) -> Bool)? = nil
+    let engine = MarkdownEngine()
 
     public init(
       text: Binding<String>,
@@ -172,6 +184,12 @@ public struct SwiftDownEditor: UIViewRepresentable {
       swiftDown.delegate = context.coordinator
       swiftDown.setupTextView()
       swiftDown.text = text
+      
+      // Configure wikilink callbacks
+      swiftDown.onWikilinkTapped = onWikilinkTapped
+      swiftDown.onWikilinkHovered = onWikilinkHovered
+      swiftDown.wikilinkValidator = wikilinkValidator
+      
       return swiftDown
     }
 
@@ -247,4 +265,55 @@ extension SwiftDownEditor {
      editor.debounceTime = debounceTime
      return editor
    }
+  
+  // MARK: - Wikilink Modifiers
+  
+  /// Sets the callback to be called when a wikilink is tapped
+  /// - Parameter callback: A closure that receives the wikilink title
+  /// - Returns: A configured SwiftDownEditor instance
+  public func onWikilinkTapped(_ callback: @escaping (String) -> Void) -> Self {
+    var editor = self
+    editor.onWikilinkTapped = callback
+    return editor
+  }
+  
+  /// Sets the callback to be called when a wikilink is hovered (macOS only)
+  /// - Parameter callback: A closure that receives the wikilink title, or nil when hover ends
+  /// - Returns: A configured SwiftDownEditor instance
+  public func onWikilinkHovered(_ callback: @escaping (String?) -> Void) -> Self {
+    var editor = self
+    editor.onWikilinkHovered = callback
+    return editor
+  }
+  
+  /// Sets a validator function to check if wikilinks are valid
+  /// - Parameter validator: A closure that returns true if the wikilink title is valid
+  /// - Returns: A configured SwiftDownEditor instance
+  public func wikilinkValidator(_ validator: @escaping (String) -> Bool) -> Self {
+    var editor = self
+    editor.wikilinkValidator = validator
+    return editor
+  }
+  
+  /// Customizes the visual style of wikilinks
+  /// - Parameter style: The WikilinkStyle to apply
+  /// - Returns: A configured SwiftDownEditor instance
+  public func wikilinkStyle(_ style: WikilinkStyle) -> Self {
+    var editor = self
+    editor.theme.wikilinkStyle = style
+    return editor
+  }
+  
+  /// Returns all wikilinks found in the current text
+  /// - Returns: Array of WikilinkMatch objects
+  public func getWikilinks() -> [WikilinkMatch] {
+    return engine.getWikilinks(from: text)
+  }
+  
+  /// Validates all wikilinks in the current text using the configured validator
+  /// - Returns: Dictionary mapping wikilink titles to their validation status, or nil if no validator is set
+  public func validateWikilinks() -> [String: Bool]? {
+    guard let validator = wikilinkValidator else { return nil }
+    return engine.validateWikilinks(in: text, using: validator)
+  }
 }

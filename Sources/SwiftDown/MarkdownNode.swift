@@ -38,6 +38,7 @@ public struct MarkdownNode: Equatable {
     case link
     case image
     case body
+    case wikilink
 
     var rawValue: Int {
       switch self {
@@ -56,6 +57,7 @@ public struct MarkdownNode: Equatable {
       case .link: return 19
       case .image: return 20
       case .body: return 21
+      case .wikilink: return 22
       }
     }
 
@@ -71,6 +73,7 @@ public struct MarkdownNode: Equatable {
       case 19: return MarkdownType.link
       case 20: return MarkdownType.image
       case 21: return MarkdownType.body
+      case 22: return MarkdownType.wikilink
       default: return nil
       }
     }
@@ -104,6 +107,7 @@ public struct MarkdownNode: Equatable {
       case "italic": return MarkdownType.italic
       case "blockQuote": return MarkdownType.quote
       case "list": return MarkdownType.list
+      case "wikilink": return MarkdownType.wikilink
       default: return nil
       }
     }
