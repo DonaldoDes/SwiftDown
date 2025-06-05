@@ -69,6 +69,9 @@ public class Storage: NSTextStorage {
   override public func attributes(
     at location: Int, longestEffectiveRange range: NSRangePointer?, in rangeLimit: NSRange
   ) -> [NSAttributedString.Key: Any] {
+    guard location >= 0 && location < backingStore.length else {
+      return [:]
+    }
     return backingStore.attributes(at: location, longestEffectiveRange: range, in: rangeLimit)
   }
 
@@ -90,6 +93,9 @@ public class Storage: NSTextStorage {
 
   public override func attributes(at location: Int, effectiveRange range: NSRangePointer?)
     -> [NSAttributedString.Key: Any] {
+    guard location >= 0 && location < backingStore.length else {
+      return [:]
+    }
     return backingStore.attributes(at: location, effectiveRange: range)
   }
 
@@ -105,7 +111,12 @@ public class Storage: NSTextStorage {
     let md = markdowner(paragraph, paragraphNSRange.lowerBound)
     setAttributes(applyBody(), range: paragraphNSRange)
     md.forEach {
-      addAttributes(applyMarkdown($0), range: $0.range)
+      let range = $0.range
+      guard range.location >= 0 && range.location < self.length && 
+            NSMaxRange(range) <= self.length else {
+        return
+      }
+      addAttributes(applyMarkdown($0), range: range)
     }
     self.edited(.editedAttributes, range: paragraphNSRange, changeInLength: 0)
   }
