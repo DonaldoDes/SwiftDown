@@ -212,7 +212,7 @@
     }
 
     let engine = MarkdownEngine()
-    var highlighter: SwiftDownHighlighter!
+    var highlighter: SwiftDownHighlighter?
 
     var text: String {
       didSet {
@@ -308,7 +308,13 @@
 
     func setupTextView() {
       scrollView.documentView = textView
-      highlighter = SwiftDownHighlighter(textView: textView)
+      
+      // Only create highlighter if text view is in a safe state
+      if textView.textStorage != nil && 
+         textView.layoutManager != nil && 
+         !textView.string.isEmpty {
+        highlighter = SwiftDownHighlighter(textView: textView)
+      }
       
       // Wire up wikilink callbacks to the text view
       if let customTextView = textView as? CustomTextView {
@@ -319,8 +325,8 @@
     }
 
     func applyStyles() {
-      assert(highlighter != nil)
-      highlighter.applyStyles()
+      // Only apply styles if highlighter was successfully created
+      highlighter?.applyStyles()
     }
   }
 #endif
