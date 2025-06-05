@@ -83,6 +83,9 @@ fastlane/test_output
 
 iOSInjectionProject/
 
+# Obsidian vault configuration
+.obsidian/
+
 ### SwiftPackageManager ###
 Packages
 xcuserdata

@@ -717,6 +717,175 @@ Update the main SwiftDown README.md to include:
 - [x] Thread safety considerations addressed
 - [x] Platform-specific code properly isolated
 
+## Critical Missing Features Analysis
+
+### Current SwiftDown API Gap Analysis
+**Status**: ❌ **MISSING IMPLEMENTATION**  
+**Impact**: **BLOCKING** Nomi app wikilink integration
+
+Based on integration testing with the Nomi note-taking app, the following critical features are **completely missing** from the current SwiftDown implementation:
+
+#### Missing API Components
+
+1. **❌ SwiftDownEditor Wikilink Parameters**
+```swift
+// EXPECTED (but not implemented):
+SwiftDownEditor(
+    text: $text,
+    onTextChange: { newText in ... },
+    onWikilinkTapped: { wikilinkText in ... }  // ❌ MISSING PARAMETER
+)
+
+// CURRENT (available):
+SwiftDownEditor(
+    text: $text,
+    onTextChange: { newText in ... },
+    onSelectionChange: { range in ... }  // ✅ Available but insufficient
+)
+```
+
+2. **❌ Wikilink Detection System**
+```swift
+// EXPECTED (but not implemented):
+- Automatic [[wikilink]] pattern recognition
+- Click/tap detection on wikilink text
+- Wikilink styling and highlighting
+- Text range mapping for interactions
+
+// CURRENT:
+- No wikilink detection capabilities
+- No specialized interaction handling
+- No wikilink-specific styling
+```
+
+3. **❌ Theme Integration**
+```swift
+// EXPECTED (but not implemented):
+public struct WikilinkStyle {
+    var textColor: UniversalColor
+    var backgroundColor: UniversalColor
+    var underlineStyle: NSUnderlineStyle
+}
+
+// CURRENT:
+- No WikilinkStyle struct exists
+- No wikilink-specific theme properties
+- Standard theme system cannot handle wikilinks
+```
+
+4. **❌ Modifier Chain Support**
+```swift
+// EXPECTED (but not implemented):
+SwiftDownEditor(text: $text)
+    .onWikilinkTapped { title in ... }     // ❌ MISSING
+    .wikilinkValidator { title in ... }     // ❌ MISSING
+    .wikilinkStyle(customStyle)             // ❌ MISSING
+
+// CURRENT:
+SwiftDownEditor(text: $text)
+    .theme(theme)                           // ✅ Available
+    .insetsSize(size)                       // ✅ Available
+    .isEditable(bool)                       // ✅ Available
+```
+
+#### Real-World Integration Issues
+
+**Nomi App Integration Status**: The Nomi note-taking app attempted to integrate updated SwiftDown expecting native wikilink support, but encountered these specific issues:
+
+1. **Build Error**: `extra argument 'onWikilinkTapped' in call`
+   - Expected parameter does not exist in SwiftDownEditor initializer
+   - No alternative API for wikilink callbacks
+
+2. **No Detection Capability**: 
+   - No built-in mechanism to detect `[[Note Title]]` patterns
+   - No automatic styling of wikilink text
+   - No click/tap handling for wikilinks
+
+3. **Missing Theme Support**:
+   - No WikilinkStyle configuration options
+   - Cannot customize wikilink appearance
+   - No integration with existing Theme system
+
+#### Immediate Implementation Requirements
+
+**Priority**: P0 (BLOCKING) - Required for Nomi app integration
+
+1. **Core API Extension**:
+```swift
+// Required SwiftDownEditor API extension
+public struct SwiftDownEditor {
+    // Add these properties:
+    public var onWikilinkTapped: ((String) -> Void)?
+    public var onWikilinkHovered: ((String?) -> Void)? // macOS only
+    public var wikilinkValidator: ((String) -> Bool)?
+    
+    // Add this initializer:
+    public init(
+        text: Binding<String>,
+        onTextChange: @escaping (String) -> Void = { _ in },
+        onSelectionChange: @escaping (NSRange) -> Void = { _ in },
+        onWikilinkTapped: ((String) -> Void)? = nil  // NEW PARAMETER
+    )
+    
+    // Add these modifier methods:
+    public func onWikilinkTapped(_ callback: @escaping (String) -> Void) -> Self
+    public func wikilinkValidator(_ validator: @escaping (String) -> Bool) -> Self
+    public func wikilinkStyle(_ style: WikilinkStyle) -> Self
+}
+```
+
+2. **Wikilink Detection Engine**:
+```swift
+// Required WikilinkProcessor class
+public class WikilinkProcessor {
+    private let wikilinkPattern = #"\[\[([^\[\]]+)\]\]"#
+    
+    public func extractWikilinks(from text: String) -> [WikilinkMatch]
+    public func detectWikilinkAt(position: Int, in text: String) -> WikilinkMatch?
+    public func applyWikilinkStyling(to attributedString: NSMutableAttributedString, theme: WikilinkStyle)
+}
+
+public struct WikilinkMatch {
+    public let title: String           // Content inside [[]]
+    public let range: NSRange         // Range in full text including [[]]
+    public let contentRange: NSRange  // Range of just the title content
+}
+```
+
+3. **Theme System Extension**:
+```swift
+// Required WikilinkStyle addition to Theme system
+public struct WikilinkStyle {
+    public var textColor: UniversalColor
+    public var backgroundColor: UniversalColor
+    public var underlineStyle: NSUnderlineStyle
+    public var hoverUnderlineStyle: NSUnderlineStyle
+    
+    public static let defaultLight: WikilinkStyle
+    public static let defaultDark: WikilinkStyle
+}
+
+// Required Theme struct extension
+extension Theme {
+    public var wikilinkStyle: WikilinkStyle { get set }
+}
+```
+
+4. **Platform-Specific Interaction Handling**:
+```swift
+// Required interaction detection for macOS (NSTextView)
+extension SwiftDown { // macOS
+    func detectWikilinkClick(at point: CGPoint) -> WikilinkMatch?
+    func handleWikilinkInteraction(_ match: WikilinkMatch)
+}
+
+// Required interaction detection for iOS (UITextView)  
+extension SwiftDown { // iOS
+    func detectWikilinkTap(at point: CGPoint) -> WikilinkMatch?
+    func handleWikilinkInteraction(_ match: WikilinkMatch)
+}
+```
+
 ## Post-Implementation Integration
 
 ### Updating Nomi App
@@ -729,7 +898,7 @@ Once wikilink support is implemented in SwiftDown:
 
 ### Example Updated Integration
 ```swift
-// In SimpleNoteEditor.swift
+// In SimpleNoteEditor.swift - AFTER implementation
 SwiftDownEditor(text: $content)
     .onWikilinkTapped { title in
         onWikilinkTapped?(title)
@@ -740,6 +909,12 @@ SwiftDownEditor(text: $content)
     }
     .wikilinkStyle(createNomiWikilinkStyle())
 ```
+
+### Nomi App Current Workaround
+Until native wikilink support is implemented, the Nomi app will:
+- Show "SwiftDown + Wikilinks: Pending Implementation" status
+- Continue using basic SwiftDown without wikilink features
+- Display orange status indicator when wikilink callback is provided
 
 This specification provides a comprehensive roadmap for implementing native wikilink support in SwiftDown while maintaining compatibility and performance standards.
 
@@ -896,7 +1071,7 @@ SwiftDownEditor(text: $text)
     }
 ```
 
-[See full wikilink documentation](SwiftDown-Wikilink-Specifications.md)
+[See full wikilink documentation](./SwiftDown-Wikilink-Specifications.md)
 ```
 
 #### Architecture Decision Records (ADRs)
@@ -906,5 +1081,5 @@ Create `docs/adr/` directory with:
 - **ADR-003**: Theme System Extension Approach
 
 ## Related Documentation
-- **Product Backlog**: See `SwiftDown-Wikilink-Backlog.md` for advanced features and future enhancements beyond the MVP scope
+- **Product Backlog**: See `./SwiftDown-Wikilink-Backlog.md` for advanced features and future enhancements beyond the MVP scope
 - **Current Scope**: This document covers Epic 1 (Core Implementation) from the product backlog
