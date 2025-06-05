@@ -32,7 +32,7 @@ This enhanced version adds:
 
 Add to your `Package.swift`:
 ```swift
-.package(url: "https://github.com/DonaldoDes/SwiftDown.git", from: "0.5.0")
+.package(url: "https://github.com/DonaldoDes/SwiftDown.git", from: "0.5.1")
 ```
 
 Or in Xcode: File → Add Package Dependencies → `https://github.com/DonaldoDes/SwiftDown.git`
