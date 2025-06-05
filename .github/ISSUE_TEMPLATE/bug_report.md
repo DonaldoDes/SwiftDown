@@ -3,7 +3,7 @@ name: Bug report
 about: Report a reproducible bug or regression.
 title: ''
 labels: "\U0001F41B Bug, \U0001F64C Pending"
-assignees: qeude
+assignees: DonaldoDes
 
 ---
 

@@ -3,7 +3,7 @@ name: Feature request
 about: Suggest an idea for this project
 title: ''
 labels: "✨ Enhancement, \U0001F64C Pending"
-assignees: qeude
+assignees: DonaldoDes
 
 ---
 

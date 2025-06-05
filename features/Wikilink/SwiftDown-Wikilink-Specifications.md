@@ -920,6 +920,8 @@ This specification provides a comprehensive roadmap for implementing native wiki
 
 ## Development Methodology
 
+> **📍 AI Agent Note**: Core development methodology, TDD requirements, and quality standards are in [CLAUDE.md](../../CLAUDE.md)
+
 ### Test-Driven Development (TDD) Requirements
 This implementation **MUST** follow strict TDD practices:
 
